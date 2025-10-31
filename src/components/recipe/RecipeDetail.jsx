@@ -4,7 +4,7 @@ import { useRecipe } from '../../hooks/useRecipes';
 import { useReviews, useCreateReview } from '../../hooks/useReviews';
 import { useIsFavorited } from '../../hooks/useFavorites';
 import { getUserIdentifier } from '../../hooks/useFavorites';
-import helpers from '../../Utils/helpers';
+import { formatDate, getDifficultyColor, getStarRating } from '../../Utils/helpers';
 import { ArrowLeft, Heart, Clock, Users, ChefHat, Star, Send, Edit, Trash2 } from 'lucide-react';
 import recipeService from '../../services/recipeService';
 import ConfirmModal from '../modals/ConfirmModal';
@@ -250,7 +250,7 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
               <div className="bg-white/70 backdrop-blur p-4 rounded-xl border border-white/60 text-center">
                 <ChefHat className={`w-6 h-6 mx-auto mb-2 text-${colors.primary}-600`} />
                 <p className="text-xs text-slate-500 mb-1">Kesulitan</p>
-                <p className={`font-semibold capitalize ${helpers.getDifficultyColor(recipe.difficulty)}`}>
+                <p className={`font-semibold capitalize ${getDifficultyColor(recipe.difficulty)}`}>
                   {recipe.difficulty}
                 </p>
               </div>
@@ -432,7 +432,7 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
                       </div>
                     </div>
                     <p className="text-sm text-slate-500">
-                      {helpers.formatDate(review.created_at)}
+                      {formatDate(review.created_at)}
                     </p>
                   </div>
                   {review.comment && (
