@@ -212,9 +212,11 @@ uploadService.uploadImage(imageFile);
  return; 
  } 
  try { 
- setCreating(true); 
- // Prepare recipe data with uploaded image URL  const validIngredients = ingredients.filter(ing =>  ing.name.trim() && ing.quantity.trim()); 
- const validSteps = steps.filter(step =>  step.trim()); 
+	setCreating(true);
+
+	// Prepare recipe data with uploaded image URL
+	const validIngredients = ingredients.filter(ing => ing.name && ing.name.trim() && ing.quantity && ing.quantity.toString().trim());
+	const validSteps = steps.filter(step => step && step.trim());
  const recipeData = { 
  name: formData.name.trim(), 
  category: formData.category, 
