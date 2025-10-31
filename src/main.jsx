@@ -6,26 +6,21 @@ import HomePage from './pages/HomePage';
 import MakananPage from './pages/MakananPage';
 import MinumanPage from './pages/MinumanPage';
 import ProfilePage from './pages/ProfilePage';
+import CreateRecipePage from './pages/CreateRecipePage';
+import EditRecipePage from './pages/EditRecipePage';
+import RecipeDetail from './components/recipe/RecipeDetail';
 import DesktopNavbar from './components/navbar/DesktopNavbar';
 import MobileNavbar from './components/navbar/MobileNavbar';
 import './index.css'
 import PWABadge from './PWABadge';
-import RecipeDetailModal from './components/RecipeDetailModal';
-import FavoritesPage from './pages/FavoritesPage'; // Tambahkan import
-import { ResepMakanan } from './data/makanan';
-import { ResepMinuman } from './data/minuman';
 
 function AppRoot() {
   const [showSplash, setShowSplash] = useState(true);
   const [currentPage, setCurrentPage] = useState('home');
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('favorites') || '[]');
-    } catch {
-      return [];
-    }
-  });
-  const [detailRecipe, setDetailRecipe] = useState(null);
+  const [mode, setMode] = useState('list'); // 'list', 'detail', 'create', 'edit'
+  const [selectedRecipeId, setSelectedRecipeId] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('makanan');
+  const [editingRecipeId, setEditingRecipeId] = useState(null);
 
   const handleSplashComplete = () => {
     setShowSplash(false);
@@ -33,50 +28,94 @@ function AppRoot() {
 
   const handleNavigation = (page) => {
     setCurrentPage(page);
+    setMode('list');
+    setSelectedRecipeId(null);
+    setEditingRecipeId(null);
   };
 
-  const handleToggleFavorite = (id) => {
-    setFavorites(prev => {
-      let updated;
-      if (prev.includes(id)) {
-        updated = prev.filter(favId => favId !== id);
-      } else {
-        updated = [...prev, id];
-      }
-      localStorage.setItem('favorites', JSON.stringify(updated));
-      return updated;
-    });
+  const handleCreateRecipe = () => {
+    setMode('create');
   };
 
-  const handleOpenDetail = (recipe) => {
-    setDetailRecipe(recipe);
+  const handleRecipeClick = (recipeId, category) => {
+    setSelectedRecipeId(recipeId);
+    setSelectedCategory(category || currentPage);
+    setMode('detail');
   };
 
-  const handleCloseDetail = () => {
-    setDetailRecipe(null);
+  const handleEditRecipe = (recipeId) => {
+    console.log('🔧 Edit button clicked! Recipe ID:', recipeId);
+    setEditingRecipeId(recipeId);
+    setMode('edit');
+    console.log('✅ Mode changed to: edit');
+  };
+
+  const handleBack = () => {
+    setMode('list');
+    setSelectedRecipeId(null);
+    setEditingRecipeId(null);
+  };
+
+  const handleCreateSuccess = (newRecipe) => {
+    alert('Resep berhasil dibuat!');
+    setMode('list');
+    // Optionally navigate to the new recipe's category
+    if (newRecipe && newRecipe.category) {
+      setCurrentPage(newRecipe.category);
+    }
+  };
+
+  const handleEditSuccess = (updatedRecipe) => {
+    alert('Resep berhasil diperbarui!');
+    setMode('list');
   };
 
   const renderCurrentPage = () => {
+    // Show Create Recipe Page
+    if (mode === 'create') {
+      return (
+        <CreateRecipePage
+          onBack={handleBack}
+          onSuccess={handleCreateSuccess}
+        />
+      );
+    }
+
+    // Show Edit Recipe Page
+    if (mode === 'edit') {
+      return (
+        <EditRecipePage
+          recipeId={editingRecipeId}
+          onBack={handleBack}
+          onSuccess={handleEditSuccess}
+        />
+      );
+    }
+
+    // Show Recipe Detail
+    if (mode === 'detail') {
+      return (
+        <RecipeDetail
+          recipeId={selectedRecipeId}
+          category={selectedCategory}
+          onBack={handleBack}
+          onEdit={handleEditRecipe}
+        />
+      );
+    }
+
+    // Show List Pages
     switch (currentPage) {
       case 'home':
-        return <HomePage favorites={favorites} onToggleFavorite={handleToggleFavorite} onOpenDetail={handleOpenDetail} />;
+        return <HomePage onRecipeClick={handleRecipeClick} onNavigate={handleNavigation} />;
       case 'makanan':
-        return <MakananPage favorites={favorites} onToggleFavorite={handleToggleFavorite} onOpenDetail={handleOpenDetail} />;
+        return <MakananPage onRecipeClick={handleRecipeClick} />;
       case 'minuman':
-        return <MinumanPage favorites={favorites} onToggleFavorite={handleToggleFavorite} onOpenDetail={handleOpenDetail} />;
-      case 'favorites': // Tambahkan case untuk halaman favorit
-        return (
-          <FavoritesPage
-            favorites={favorites}
-            recipes={[...Object.values(ResepMakanan.resep), ...Object.values(ResepMinuman.resep)]} // Gabungkan data makanan dan minuman
-            onToggleFavorite={handleToggleFavorite}
-            onOpenDetail={handleOpenDetail}
-          />
-        );
+        return <MinumanPage onRecipeClick={handleRecipeClick} />;
       case 'profile':
-        return <ProfilePage favorites={favorites} onToggleFavorite={handleToggleFavorite} onOpenDetail={handleOpenDetail} />;
+        return <ProfilePage onRecipeClick={handleRecipeClick} />;
       default:
-        return <HomePage favorites={favorites} onToggleFavorite={handleToggleFavorite} onOpenDetail={handleOpenDetail} />;
+        return <HomePage onRecipeClick={handleRecipeClick} onNavigate={handleNavigation} />;
     }
   };
 
@@ -86,19 +125,28 @@ function AppRoot() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Desktop Navbar */}
-      <DesktopNavbar currentPage={currentPage} onNavigate={handleNavigation} />
+      {/* Only show navbar in list mode */}
+      {mode === 'list' && (
+        <>
+          <DesktopNavbar 
+            currentPage={currentPage} 
+            onNavigate={handleNavigation}
+            onCreateRecipe={handleCreateRecipe}
+          />
+          <MobileNavbar 
+            currentPage={currentPage} 
+            onNavigate={handleNavigation}
+            onCreateRecipe={handleCreateRecipe}
+          />
+        </>
+      )}
+      
       {/* Main Content */}
       <main className="min-h-screen">
         {renderCurrentPage()}
       </main>
-      {/* Mobile Navbar */}
-      <MobileNavbar currentPage={currentPage} onNavigate={handleNavigation} />
+
       <PWABadge />
-      {/* Detail Modal */}
-      {detailRecipe && (
-        <RecipeDetailModal recipe={detailRecipe} onClose={handleCloseDetail} />
-      )}
     </div>
   );
 }
@@ -108,3 +156,4 @@ createRoot(document.getElementById('root')).render(
     <AppRoot />
   </StrictMode>,
 )
+
